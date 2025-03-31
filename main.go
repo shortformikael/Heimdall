@@ -22,6 +22,7 @@ func varInit() {
 
 	menuTree.Head.Value = "Main Menu"
 	menuTree.Head.AddChild(&container.TreeNode{Value: "View"})
+	menuTree.Head.AddChild(&container.TreeNode{Value: "Capture"})
 	menuTree.Head.AddChild(&container.TreeNode{Value: "Settings"})
 	menuTree.Head.AddChild(&container.TreeNode{Value: "Exit"})
 

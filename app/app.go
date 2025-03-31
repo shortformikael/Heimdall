@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
+	"github.com/shortformikael/Heimdall/capturer"
 	"github.com/shortformikael/Heimdall/container"
 )
 
@@ -24,6 +25,8 @@ type Engine struct {
 	sigCh     chan os.Signal
 	keyCh     chan keyboard.Key
 	wg        sync.WaitGroup
+
+	capturer *capturer.Capturer
 }
 
 func (e *Engine) Start() {
@@ -41,18 +44,20 @@ func (e *Engine) Start() {
 
 func (e *Engine) Init(tree *container.TreeGraph) {
 	e.Running = false
-	e.commandCh = make(chan string) //Command Channel,
-	e.drawCh = make(chan string)
 	e.Menu = container.NewMenu(tree)
+	e.capturer = &capturer.Capturer{}
+	e.capturer.Init()
+
 	if err := keyboard.Open(); err != nil {
 		fmt.Println("Error opening keyboard:", err)
 		return
 	}
 	//defer keyboard.Close()
 
+	e.commandCh = make(chan string) //Command Channel,
+	e.drawCh = make(chan string)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
 	e.keyCh = make(chan keyboard.Key)
 }
 
@@ -104,22 +109,23 @@ func (e *Engine) actionListener(id int, wg *sync.WaitGroup) {
 				return
 			}
 			switch key {
+
 			case keyboard.KeyEsc:
 				fmt.Println("\nESC pressed. Exiting...")
 				e.Shutdown()
-
 			case keyboard.KeyArrowDown:
 				e.commandCh <- "NEXT"
 			case keyboard.KeyArrowUp:
 				e.commandCh <- "PREVIOUS"
-			case keyboard.KeyArrowLeft:
-				fmt.Println("[ARROW LEFT]")
-			case keyboard.KeyArrowRight:
-				fmt.Println("[ARROW RIGHT]")
 			case 13:
 				e.commandCh <- "SELECT"
 			case 8:
 				e.commandCh <- "BACK"
+
+			case keyboard.KeyArrowLeft:
+				fmt.Println("[ARROW LEFT]")
+			case keyboard.KeyArrowRight:
+				fmt.Println("[ARROW RIGHT]")
 			default:
 				if key >= 32 && key <= 126 {
 					fmt.Printf("Key: %c\n", key)
@@ -152,11 +158,16 @@ func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 			fmt.Println("")
 		}
 
-		if e.Menu.Current.String() == "Main Menu" {
+		switch e.Menu.Current.String() {
+		case "Main Menu":
 			e.Menu.PrintCli()
-		} else {
+		case "Capture":
+			e.Menu.PrintCliTitle()
+			e.capturer.PrintCli()
+		default:
 			e.Menu.PrintCliTitle()
 		}
+
 	}
 
 	fmt.Printf("Process %d Ended\n", id)
@@ -175,13 +186,25 @@ func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 		case "PREVIOUS":
 			e.Menu.Previous()
 		case "SELECT":
-			sel := e.Menu.Select()
-			if sel == "Exit" {
-				e.Shutdown()
-			} else {
-				e.drawCh <- sel
+			switch e.Menu.Current.String() {
+			case "Main Menu":
+				sel := e.Menu.Select()
+				if sel == "Exit" {
+					e.Shutdown()
+				} else {
+					e.drawCh <- sel
+					continue
+				}
+			case "Capture":
+				if e.capturer.Running {
+					e.capturer.EndCapture()
+					e.drawCh <- "End Capture"
+				} else {
+					e.capturer.StartCapture()
+					e.drawCh <- "Start Capture"
+				}
+				continue
 			}
-			continue
 		case "BACK":
 			e.Menu.Back()
 		}
