@@ -26,7 +26,7 @@ type Engine struct {
 	keyCh     chan keyboard.Key
 	wg        sync.WaitGroup
 
-	capturer *capturer.Capturer
+	capturer *capturer.CaptureManager
 }
 
 func (e *Engine) Start() {
@@ -45,7 +45,7 @@ func (e *Engine) Start() {
 func (e *Engine) Init(tree *container.TreeGraph) {
 	e.Running = false
 	e.Menu = container.NewMenu(tree)
-	e.capturer = &capturer.Capturer{}
+	e.capturer = &capturer.CaptureManager{}
 	e.capturer.Init()
 
 	if err := keyboard.Open(); err != nil {

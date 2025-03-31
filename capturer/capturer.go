@@ -2,47 +2,67 @@ package capturer
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
 )
 
-type Capturer struct {
+type CaptureManager struct {
 	capDevice *pcap.Interface
-	Running   bool
 	capture   *PacketCapture
+	Running   bool
 }
 
-func (c *Capturer) Init() {
+func (c *CaptureManager) Init() {
 	c.setDeviceName()
 	c.Running = false
 }
 
-func (c *Capturer) StartCapture() error {
+func (c *CaptureManager) StartCapture() error {
 	var err error
 	c.capture, err = NewPacketCapture(c.capDevice.Name)
 	if err != nil {
 		return err
 	}
 
-	c.capture.Start()
 	c.Running = true
+	c.capture.Start()
 
-	go func() {
-		for packet := range c.capture.Packets() {
-			//Process Packets
-			fmt.Printf("Packet: %s \n", packet)
-		}
-	}()
+	go c.WritePacketToFile("capture.pcap", c.capture.packetChan)
 	return nil
 }
 
-func (c *Capturer) EndCapture() {
+func (c *CaptureManager) WritePacketToFile(filename string, packetChan <-chan gopacket.Packet) error {
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := pcapgo.NewWriter(f)
+	err = w.WriteFileHeader(1600, layers.LinkTypeEthernet)
+	if err != nil {
+		return err
+	}
+
+	for packet := range packetChan {
+		err := w.WritePacket(packet.Metadata().CaptureInfo, packet.Data())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (c *CaptureManager) EndCapture() {
 	c.capture.Stop()
 	c.Running = false
 }
 
-func (c *Capturer) PrintCli() {
+func (c *CaptureManager) PrintCli() {
 	fmt.Println(" -> You're Within the Capture Menu")
 	if c.Running {
 		fmt.Println("Capture Running...")
@@ -52,14 +72,14 @@ func (c *Capturer) PrintCli() {
 	c.PrintTargetDevice()
 }
 
-func (c *Capturer) PrintTargetDevice() {
+func (c *CaptureManager) PrintTargetDevice() {
 	fmt.Println("\nName:", c.capDevice.Name)
 	fmt.Println("Description:", c.capDevice.Description)
 	fmt.Println("- IP address:", c.capDevice.Addresses[0].IP)
 	fmt.Println("- Subnet Mask: ", c.capDevice.Addresses[0].Netmask)
 }
 
-func (c *Capturer) PrintDevices() {
+func (c *CaptureManager) PrintDevices() {
 	devices, _ := pcap.FindAllDevs()
 
 	for _, device := range devices {
@@ -71,7 +91,7 @@ func (c *Capturer) PrintDevices() {
 	}
 }
 
-func (c *Capturer) setDeviceName() {
+func (c *CaptureManager) setDeviceName() {
 	devices, _ := pcap.FindAllDevs()
 
 	for _, device := range devices {

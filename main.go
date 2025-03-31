@@ -21,7 +21,7 @@ func varInit() {
 	App.List = &container.LinkedList{}
 
 	menuTree.Head.Value = "Main Menu"
-	menuTree.Head.AddChild(&container.TreeNode{Value: "View"})
+	menuTree.Head.AddChild(&container.TreeNode{Value: "Analysis"})
 	menuTree.Head.AddChild(&container.TreeNode{Value: "Capture"})
 	menuTree.Head.AddChild(&container.TreeNode{Value: "Settings"})
 	menuTree.Head.AddChild(&container.TreeNode{Value: "Exit"})
