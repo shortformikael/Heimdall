@@ -63,7 +63,7 @@ func (c *CaptureManager) EndCapture() {
 }
 
 func (c *CaptureManager) PrintCli() {
-	fmt.Println(" -> You're Within the Capture Menu")
+	// fmt.Println(" -> You're Within the Capture Menu")
 	if c.Running {
 		fmt.Println("Capture Running...")
 	} else {

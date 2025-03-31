@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
+	"github.com/shortformikael/Heimdall/analyzer"
 	"github.com/shortformikael/Heimdall/capturer"
 	"github.com/shortformikael/Heimdall/container"
 )
@@ -27,6 +28,7 @@ type Engine struct {
 	wg        sync.WaitGroup
 
 	capturer *capturer.CaptureManager
+	analyzer *analyzer.Analyzer
 }
 
 func (e *Engine) Start() {
@@ -46,6 +48,7 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 	e.Running = false
 	e.Menu = container.NewMenu(tree)
 	e.capturer = &capturer.CaptureManager{}
+	e.analyzer = &analyzer.Analyzer{}
 	e.capturer.Init()
 
 	if err := keyboard.Open(); err != nil {
@@ -75,7 +78,6 @@ func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 			fmt.Println("Error getting key:", err)
 			keyboard.Close()
 			fmt.Println("Attempting to re-open keyboard...")
-
 			if err := keyboard.Open(); err != nil {
 				fmt.Printf("Failed to re-open keyboard: %v. Exiting... \n", err)
 				keyboard.Close()
@@ -164,18 +166,17 @@ func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 		case "Capture":
 			e.Menu.PrintCliTitle()
 			e.capturer.PrintCli()
+		case "Analysis":
+			e.analyzer.PrintCli()
 		default:
 			e.Menu.PrintCliTitle()
 		}
-
 	}
-
 	fmt.Printf("Process %d Ended\n", id)
 }
 
 func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
-
 	fmt.Printf("Process %d Started\n", id)
 
 	for e.Running {
