@@ -153,7 +153,7 @@ func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 		clearConsole()
 
 		if comm != "" {
-			fmt.Println("Message:", comm)
+			fmt.Println("Event:", comm)
 		} else {
 			fmt.Println("")
 		}
@@ -192,7 +192,7 @@ func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 				if sel == "Exit" {
 					e.Shutdown()
 				} else {
-					e.drawCh <- sel
+					e.drawCh <- "Selected " + sel
 					continue
 				}
 			case "Capture":
@@ -200,7 +200,11 @@ func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 					e.capturer.EndCapture()
 					e.drawCh <- "End Capture"
 				} else {
-					e.capturer.StartCapture()
+					err := e.capturer.StartCapture()
+					if err != nil {
+						e.drawCh <- err.Error()
+						continue
+					}
 					e.drawCh <- "Start Capture"
 				}
 				continue
