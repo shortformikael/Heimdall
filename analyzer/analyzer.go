@@ -25,6 +25,11 @@ func (a *AnalyzerManager) Start() {
 		a.PacketArray = append(a.PacketArray, newPacket(packet))
 	}
 	a.PrintPackets()
+	a.startAnalysis()
+}
+
+func (a *AnalyzerManager) startAnalysis() {
+	//conversations
 }
 
 func (a *AnalyzerManager) PrintPackets() {
