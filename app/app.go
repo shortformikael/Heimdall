@@ -3,7 +3,9 @@ package app
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -188,5 +190,14 @@ func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 }
 
 func clearConsole() {
-	fmt.Println(("\033[H\033[2J"))
+	// fmt.Println(("\033[H\033[2J"))
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "cls")
+	} else {
+		cmd = exec.Command("clear")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Run()
 }
