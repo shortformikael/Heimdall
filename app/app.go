@@ -28,7 +28,7 @@ type Engine struct {
 	wg        sync.WaitGroup
 
 	capturer *capturer.CaptureManager
-	analyzer *analyzer.Analyzer
+	analyzer *analyzer.AnalyzerManager
 }
 
 func (e *Engine) Start() {
@@ -48,7 +48,7 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 	e.Running = false
 	e.Menu = container.NewMenu(tree)
 	e.capturer = &capturer.CaptureManager{}
-	e.analyzer = &analyzer.Analyzer{}
+	e.analyzer = &analyzer.AnalyzerManager{}
 	e.capturer.Init()
 
 	if err := keyboard.Open(); err != nil {
@@ -208,6 +208,9 @@ func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 					}
 					e.drawCh <- "Start Capture"
 				}
+				continue
+			case "Analysis":
+				e.analyzer.Start()
 				continue
 			}
 		case "BACK":

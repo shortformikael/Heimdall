@@ -32,7 +32,7 @@ func (c *CaptureManager) StartCapture() error {
 	c.Running = true
 	c.capture.Start()
 
-	go c.WritePacketToFile("capture.pcap", c.capture.packetChan)
+	go c.WritePacketToFile("pcaps/capture.pcap", c.capture.packetChan)
 	return nil
 }
 
