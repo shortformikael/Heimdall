@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
-	"github.com/shortformikael/GoLearning/container"
+	"github.com/shortformikael/Heimdall/container"
 )
 
 type Engine struct {
@@ -59,17 +59,9 @@ func (e *Engine) Shutdown() {
 	os.Exit(1)
 }
 
-func (e *Engine) printTreeNode(node *container.TreeNode) {
-	fmt.Println("==", node, "==")
-	for i := 0; i < len(node.Children); i++ {
-		fmt.Println("  [*]", node.Children[i])
-	}
-}
-
 func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	fmt.Printf("Process %d Started\n", id)
-
 	for e.Running {
 		char, key, err := keyboard.GetKey()
 		if err != nil {
@@ -91,14 +83,12 @@ func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 			e.keyCh <- keyboard.Key(char)
 		}
 	}
-
 	fmt.Printf("Process %d Ended\n", id)
 }
 
 func (e *Engine) actionListener(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	fmt.Printf("Process %d Started\n", id)
-
 	for e.Running {
 		select {
 		case <-e.sigCh:
@@ -111,7 +101,6 @@ func (e *Engine) actionListener(id int, wg *sync.WaitGroup) {
 				e.Shutdown()
 				return
 			}
-
 			switch key {
 			case keyboard.KeyEsc:
 				fmt.Println("\nESC pressed. Exiting...")
@@ -148,17 +137,24 @@ func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 	time.Sleep(1 * time.Second)
 
 	clearConsole()
+	fmt.Println("")
 	e.Menu.PrintCli()
 
 	for e.Running {
 		comm := <-e.drawCh
 		clearConsole()
+
+		if comm != "" {
+			fmt.Println("Message:", comm)
+		} else {
+			fmt.Println("")
+		}
+
 		if e.Menu.Current.String() == "Main Menu" {
 			e.Menu.PrintCli()
 		} else {
 			e.Menu.PrintCliTitle()
 		}
-		fmt.Println("Message:", comm)
 	}
 
 	fmt.Printf("Process %d Ended\n", id)

@@ -1,4 +1,4 @@
-module github.com/shortformikael/GoLearning
+module github.com/shortformikael/Heimdall
 
 go 1.24.1
 

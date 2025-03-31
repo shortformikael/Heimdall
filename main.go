@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/shortformikael/GoLearning/app"
-	"github.com/shortformikael/GoLearning/container"
+	"github.com/shortformikael/Heimdall/app"
+	"github.com/shortformikael/Heimdall/container"
 )
 
 var App *app.Engine = &app.Engine{}
