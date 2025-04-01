@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -32,8 +33,16 @@ func (c *CaptureManager) StartCapture() error {
 	c.Running = true
 	c.capture.Start()
 
-	go c.WritePacketToFile("pcaps/capture.pcap", c.capture.packetChan)
+	filename := c.getFilename()
+
+	go c.WritePacketToFile(filename, c.capture.packetChan)
 	return nil
+}
+
+func (c *CaptureManager) getFilename() string {
+	format := "2006-01-02_15-04-05"
+	timeNow := time.Now().Format(format)
+	return fmt.Sprintf("pcaps/capture_%s.pcap", timeNow)
 }
 
 func (c *CaptureManager) WritePacketToFile(filename string, packetChan <-chan gopacket.Packet) error {
@@ -44,7 +53,7 @@ func (c *CaptureManager) WritePacketToFile(filename string, packetChan <-chan go
 	defer f.Close()
 
 	w := pcapgo.NewWriter(f)
-	err = w.WriteFileHeader(1600, layers.LinkTypeEthernet)
+	err = w.WriteFileHeader(128, layers.LinkTypeEthernet)
 	if err != nil {
 		return err
 	}
@@ -66,6 +75,7 @@ func (c *CaptureManager) PrintCli() {
 	// fmt.Println(" -> You're Within the Capture Menu")
 	if c.Running {
 		fmt.Println("Capture Running...")
+		fmt.Println(c.getFilename())
 	} else {
 		fmt.Println("")
 	}
