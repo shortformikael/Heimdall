@@ -50,6 +50,7 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 	e.capturer = &capturer.CaptureManager{}
 	e.analyzer = &analyzer.AnalyzerManager{}
 	e.capturer.Init()
+	e.analyzer.Init()
 
 	if err := keyboard.Open(); err != nil {
 		fmt.Println("Error opening keyboard:", err)

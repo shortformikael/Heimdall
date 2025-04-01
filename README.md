@@ -20,5 +20,5 @@
 * Source and Destination IPs
 * Measure traffic volume (Packet Size and Count)
 * Protocol classification (TCP, UDP, ICMP)
-* Application-layer Protocol Detection (HTTP, DNS, TLS)
+* Application-layer Protocol Detection through known ports with SNI.
 * Does not do Deep Packet Inspection, only headers.
