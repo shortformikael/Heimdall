@@ -46,11 +46,18 @@ func (e *Engine) Start() {
 
 func (e *Engine) Init(tree *container.TreeGraph) {
 	e.Running = false
+
+	e.commandCh = make(chan string) //Command Channel,
+	e.drawCh = make(chan string)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	e.keyCh = make(chan keyboard.Key)
+
 	e.Menu = container.NewMenu(tree)
 	e.capturer = &capturer.CaptureManager{}
 	e.analyzer = &analyzer.AnalyzerManager{}
 	e.capturer.Init()
-	e.analyzer.Init()
+	e.analyzer.Init(&e.drawCh)
 
 	if err := keyboard.Open(); err != nil {
 		fmt.Println("Error opening keyboard:", err)
@@ -58,11 +65,6 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 	}
 	//defer keyboard.Close()
 
-	e.commandCh = make(chan string) //Command Channel,
-	e.drawCh = make(chan string)
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	e.keyCh = make(chan keyboard.Key)
 }
 
 func (e *Engine) Shutdown() {

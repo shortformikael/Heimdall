@@ -10,10 +10,12 @@ import (
 type AnalyzerManager struct {
 	Running         bool
 	conversationMap map[string]*Conversation
+	drawCh          *chan string
 }
 
-func (a *AnalyzerManager) Init() {
+func (a *AnalyzerManager) Init(drawCh *chan string) {
 	a.conversationMap = make(map[string]*Conversation)
+	a.drawCh = drawCh
 }
 
 func (a *AnalyzerManager) Start() {
