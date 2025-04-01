@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -39,6 +40,23 @@ func (a *AnalyzerManager) getFileHandle() (*pcap.Handle, error) {
 	return handle, nil
 }
 
+func (a *AnalyzerManager) getAvailableFiles() []string {
+	r := []string{}
+
+	dirPath := "./pcaps/"
+
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		fmt.Println("Error reading directory:", err)
+	}
+
+	for _, entry := range entries {
+		r = append(r, entry.Name())
+	}
+
+	return r
+}
+
 func (a *AnalyzerManager) AnalyzePacketSource(handle *pcap.Handle) {
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 
@@ -71,4 +89,11 @@ func (a *AnalyzerManager) printAnalysis() {
 func (a *AnalyzerManager) PrintCli() {
 	fmt.Println("=== Analysis ===")
 	fmt.Println(" -> Youre in the Analyzer menu")
+	a.PrintAvailableFiles()
+}
+
+func (a *AnalyzerManager) PrintAvailableFiles() {
+	for _, files := range a.getAvailableFiles() {
+		fmt.Println("-", files)
+	}
 }

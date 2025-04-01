@@ -106,6 +106,7 @@ func (c *CaptureManager) setDeviceName() {
 
 	for _, device := range devices {
 		if strings.Contains(device.Description, "Wireless") ||
+			strings.Contains(device.Name, "wl") ||
 			strings.Contains(device.Description, "Wi-Fi") {
 			c.capDevice = &device
 			return

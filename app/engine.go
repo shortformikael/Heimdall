@@ -124,9 +124,8 @@ func (e *Engine) actionListener(id int, wg *sync.WaitGroup) {
 				e.commandCh <- "PREVIOUS"
 			case 13:
 				e.commandCh <- "SELECT"
-			case 8:
+			case 8, 127:
 				e.commandCh <- "BACK"
-
 			case keyboard.KeyArrowLeft:
 				fmt.Println("[ARROW LEFT]")
 			case keyboard.KeyArrowRight:
