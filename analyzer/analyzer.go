@@ -23,6 +23,14 @@ func (a *AnalyzerManager) Init(drawCh *chan string) {
 	a.dirPath = "./pcaps"
 }
 
+func (a *AnalyzerManager) StartAutomation() {
+	a.Running = true
+}
+
+func (a *AnalyzerManager) EndAutomation() {
+	a.Running = false
+}
+
 func (a *AnalyzerManager) Start() {
 	a.availableFiles = a.getAvailableFiles()
 	//Iterate through available files
@@ -51,6 +59,17 @@ func (a *AnalyzerManager) getAvailableFiles() []string {
 	}
 
 	return r
+}
+
+func (a *AnalyzerManager) PrintAutomation() {
+	if a.Running {
+		fmt.Println(" -> Analyze Running...")
+	} else {
+		fmt.Println(" -> Waiting to Analyze...")
+	}
+	fmt.Println(" -> ")
+	fmt.Println(" -> ")
+	fmt.Println(" -> ")
 }
 
 func (a *AnalyzerManager) PrintCli() {

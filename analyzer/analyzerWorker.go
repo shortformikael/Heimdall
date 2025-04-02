@@ -39,14 +39,14 @@ func (a *analyzerWorker) Start() {
 	// Serialize hashmap
 	err = a.saveToJSON()
 	if err != nil {
-		fmt.Errorf("error writing to file:", err)
+		fmt.Println("error writing to file:", err)
 		return
 	}
 	fmt.Println("Worker for file", a.filename, "Ended!")
 }
 
 func (a *analyzerWorker) saveToJSON() error {
-	file, err := os.Create(strings.Split(a.filename, ".")[0] + ".json")
+	file, err := os.Create(strings.Split("entries/"+a.filename, ".")[0] + ".json")
 	if err != nil {
 		return err
 	}
@@ -54,9 +54,15 @@ func (a *analyzerWorker) saveToJSON() error {
 
 	encoder := json.NewEncoder(file)
 
-	encoder.SetIndent("", "  ")
-	encoder.Encode(a.conversationMap)
+	var entries []Conversation
+	for _, value := range a.conversationMap {
+		entries = append(entries, *value)
+	}
 
+	encoder.SetIndent("", "  ")
+	if err = encoder.Encode(entries); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -71,12 +77,12 @@ func (a *analyzerWorker) AnalyzePacketSource(handle *pcap.Handle) {
 			conv.Append(packet)
 		} else {
 			a.conversationMap[key] = &Conversation{
-				src:         packet.Src,
-				dst:         packet.Dst,
-				count:       1,
-				size:        packet.Length,
-				protocol:    packet.Protocol,
-				application: packet.Application,
+				Src:         packet.Src,
+				Dst:         packet.Dst,
+				Count:       1,
+				Size:        packet.Length,
+				Protocol:    packet.Protocol,
+				Application: packet.Application,
 			}
 		}
 	}

@@ -165,6 +165,10 @@ func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 		switch e.Menu.Current.String() {
 		case "Main Menu":
 			e.Menu.PrintCli()
+		case "Automation":
+			fmt.Println("=== Automation ===")
+			e.capturer.PrintAutomation()
+			e.analyzer.PrintAutomation()
 		case "Capture":
 			e.Menu.PrintCliTitle()
 			e.capturer.PrintCli()
@@ -197,6 +201,17 @@ func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 				} else {
 					e.drawCh <- "Selected " + sel
 					continue
+				}
+			case "Automation":
+				if !e.analyzer.Running {
+					e.analyzer.StartAutomation()
+				} else {
+					e.analyzer.EndAutomation()
+				}
+				if !e.capturer.Running {
+					e.capturer.StartAutomation()
+				} else {
+					e.capturer.EndAutomation()
 				}
 			case "Capture":
 				if e.capturer.Running {

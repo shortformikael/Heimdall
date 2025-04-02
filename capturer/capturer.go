@@ -23,6 +23,14 @@ func (c *CaptureManager) Init() {
 	c.Running = false
 }
 
+func (c *CaptureManager) StartAutomation() {
+	c.Running = true
+}
+
+func (c *CaptureManager) EndAutomation() {
+	c.Running = false
+}
+
 func (c *CaptureManager) StartCapture() error {
 	var err error
 	c.capture, err = NewPacketCapture(c.capDevice.Name)
@@ -82,6 +90,19 @@ func (c *CaptureManager) PrintCli() {
 	c.PrintTargetDevice()
 }
 
+func (c *CaptureManager) PrintAutomation() {
+	if c.Running {
+		fmt.Println(" -> Capture Running...")
+	} else {
+		fmt.Println(" -> Waiting to Capture...")
+	}
+	// What captures are running?
+	fmt.Println(" -> ")
+	fmt.Println(" -> ")
+	// What device is capturing?
+	fmt.Println(" -> ")
+}
+
 func (c *CaptureManager) PrintTargetDevice() {
 	fmt.Println("\nName:", c.capDevice.Name)
 	fmt.Println("Description:", c.capDevice.Description)
@@ -106,6 +127,7 @@ func (c *CaptureManager) setDeviceName() {
 
 	for _, device := range devices {
 		if strings.Contains(device.Description, "Wireless") ||
+			strings.Contains(device.Name, "eth") ||
 			strings.Contains(device.Name, "wl") ||
 			strings.Contains(device.Description, "Wi-Fi") {
 			c.capDevice = &device
