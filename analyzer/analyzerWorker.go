@@ -1,7 +1,10 @@
 package analyzer
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/google/gopacket"
@@ -34,7 +37,27 @@ func (a *analyzerWorker) Start() {
 
 	a.AnalyzePacketSource(handle)
 	// Serialize hashmap
+	err = a.saveToJSON()
+	if err != nil {
+		fmt.Errorf("error writing to file:", err)
+		return
+	}
 	fmt.Println("Worker for file", a.filename, "Ended!")
+}
+
+func (a *analyzerWorker) saveToJSON() error {
+	file, err := os.Create(strings.Split(a.filename, ".")[0] + ".json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+
+	encoder.SetIndent("", "  ")
+	encoder.Encode(a.conversationMap)
+
+	return nil
 }
 
 func (a *analyzerWorker) AnalyzePacketSource(handle *pcap.Handle) {
