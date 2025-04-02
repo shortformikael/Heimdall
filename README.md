@@ -4,10 +4,10 @@
 
 ## Install guide
 
-´´´
 go mod download
+
 go install
-´´´
+
 
 
 ## User Stories
