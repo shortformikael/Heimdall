@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
+	"github.com/shortformikael/Heimdall/Sender"
 	"github.com/shortformikael/Heimdall/analyzer"
 	"github.com/shortformikael/Heimdall/capturer"
 	"github.com/shortformikael/Heimdall/container"
-	"github.com/shortformikael/Heimdall/reader"
 )
 
 type Engine struct {
@@ -30,7 +30,7 @@ type Engine struct {
 
 	capturer *capturer.CaptureManager
 	analyzer *analyzer.AnalyzerManager
-	reader   *reader.Reader
+	sender   *Sender.Sender
 }
 
 func (e *Engine) Start() {
@@ -58,7 +58,7 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 	e.Menu = container.NewMenu(tree)
 	e.capturer = &capturer.CaptureManager{}
 	e.analyzer = &analyzer.AnalyzerManager{}
-	e.reader = reader.NewReader()
+	e.sender = Sender.NewSender()
 	e.capturer.Init(e.drawCh)
 	e.analyzer.Init(e.drawCh)
 
@@ -172,7 +172,7 @@ func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 			fmt.Println("=== Automation ===")
 			e.capturer.PrintAutomation()
 			e.analyzer.PrintAutomation()
-			e.reader.PrintAutomation()
+			e.sender.PrintAutomation()
 		case "Capture":
 			e.Menu.PrintCliTitle()
 			e.capturer.PrintCli()
@@ -217,10 +217,10 @@ func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 				} else {
 					e.capturer.EndAutomation()
 				}
-				if !e.reader.Running {
-					e.reader.StartAutomation()
+				if !e.sender.Running {
+					e.sender.StartAutomation()
 				} else {
-					e.reader.EndAutomation()
+					e.sender.EndAutomation()
 				}
 			case "Capture":
 				if e.capturer.Running {

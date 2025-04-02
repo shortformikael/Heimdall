@@ -1,67 +1,71 @@
-package reader
+package Sender
 
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
-type Reader struct {
+type Sender struct {
 	Running  bool
 	pcapPath string
 	jsonPath string
 
 	sigCh    chan string
-	ReaderCh chan string
+	SenderCh chan string
+	count    int
 }
 
-func NewReader() *Reader {
-	return &Reader{
+func NewSender() *Sender {
+	return &Sender{
 		Running:  false,
 		pcapPath: "./entries/done",
 		jsonPath: "./entries",
-		ReaderCh: make(chan string),
+		SenderCh: make(chan string),
+		count:    0,
 	}
 }
 
-func (r *Reader) StartAutomation() {
+func (r *Sender) StartAutomation() {
 	r.Running = true
 
 	go r.actionListener()
-
 	go r.StartReading()
 }
 
-func (r *Reader) actionListener() {
+func (r *Sender) actionListener() {
 	r.sigCh = make(chan string)
 	for {
 		select {
 		case <-r.sigCh:
 			return
-		case <-r.ReaderCh:
+		case <-r.SenderCh:
 			go r.StartReading()
 		}
 	}
 }
 
-func (r *Reader) StartReading() {
+func (r *Sender) StartReading() {
 	pcapFiles := r.getAvailableFiles(r.pcapPath)
 	jsonFiles := r.getAvailableFiles(r.jsonPath)
+	// Remove processed pcaps
 	for _, file := range pcapFiles {
-		fmt.Println(file)
+		os.Remove(file)
 	}
-
+	// Send and Remove json files
 	for _, file := range jsonFiles {
-		fmt.Println(file)
+		r.count++
+		os.Remove(file)
 	}
 
 	time.Sleep(1 * time.Second)
 	if r.Running {
-		r.ReaderCh <- ""
+		r.SenderCh <- ""
 	}
 }
 
-func (r *Reader) getAvailableFiles(path string) []string {
+func (r *Sender) getAvailableFiles(path string) []string {
 	ret := []string{}
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -70,22 +74,24 @@ func (r *Reader) getAvailableFiles(path string) []string {
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			ret = append(ret, entry.Name())
+			ret = append(ret, (path + "/" + entry.Name()))
 		}
 	}
 
 	return ret
 }
 
-func (r *Reader) EndAutomation() {
+func (r *Sender) EndAutomation() {
 	r.Running = false
 	close(r.sigCh)
 }
 
-func (r *Reader) PrintAutomation() {
+func (r *Sender) PrintAutomation() {
 	if r.Running {
 		fmt.Println(" =====> READING...")
 	} else {
 		fmt.Println(" =====> not reading")
 	}
+
+	fmt.Println(" - Total files sent:", strconv.FormatInt(int64(r.count), 10))
 }
