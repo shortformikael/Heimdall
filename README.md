@@ -1,6 +1,15 @@
 # Heimdall
 * A lightweight network traffic analysis tool for an SBC
 
+
+## Install guide
+
+´´´
+go mod download
+go install
+´´´
+
+
 ## User Stories
 * A user sees a dashboard/interface showing how much data is consumed by devices in the network.
 * The dashboard/interface should detail the devices and what they are what they are doing. (WHAT AND WHO IS CONSUMING WHAT, INTERNAL VISON OF THE NETWORK) 
