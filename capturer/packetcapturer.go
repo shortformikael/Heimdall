@@ -13,6 +13,8 @@ type PacketCapture struct {
 	stopCh     chan struct{}
 	wg         sync.WaitGroup
 	packetChan chan gopacket.Packet
+	maxBytes   int
+	totalBytes int
 }
 
 func (pc *PacketCapture) Start() {
@@ -27,6 +29,11 @@ func (pc *PacketCapture) Start() {
 				return
 			case packet := <-source.Packets():
 				pc.packetChan <- packet
+				pc.totalBytes += len(packet.Data())
+				if pc.totalBytes > pc.maxBytes {
+					//Limit Reached
+					return
+				}
 			}
 		}
 	}()
@@ -59,5 +66,7 @@ func NewPacketCapture(device string) (*PacketCapture, error) {
 		handle:     handle,
 		stopCh:     make(chan struct{}),
 		packetChan: make(chan gopacket.Packet, 1000),
+		maxBytes:   10 * (1000 * 1024), // 10MB
+		totalBytes: 0,
 	}, nil
 }

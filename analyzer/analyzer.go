@@ -3,31 +3,72 @@ package analyzer
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 )
 
 type AnalyzerManager struct {
 	Running         bool
-	dirPath         string
+	targetPath      string
+	ongoingPath     string
+	donePath        string
 	conversationMap map[string]*Conversation
-	drawCh          *chan string
 	availableFiles  []string
 	wg              *sync.WaitGroup
+
+	drawCh    chan string
+	SigCh     chan string
+	AnalyzeCh chan string
+
+	track1 string
+	track2 string
+	track3 string
 }
 
-func (a *AnalyzerManager) Init(drawCh *chan string) {
+func (a *AnalyzerManager) Init(drawCh chan string) {
 	a.conversationMap = make(map[string]*Conversation)
+
 	a.drawCh = drawCh
+	a.AnalyzeCh = make(chan string)
+	a.SigCh = make(chan string)
+
 	a.availableFiles = a.getAvailableFiles()
 	a.wg = &sync.WaitGroup{}
-	a.dirPath = "./pcaps"
+	a.targetPath = "./pcaps/done"
+	a.ongoingPath = "./entries/ongoing"
+	a.donePath = "./entries"
+	a.track1 = ""
+	a.track2 = " - Running: "
+	a.track3 = ""
 }
 
 func (a *AnalyzerManager) StartAutomation() {
 	a.Running = true
+	a.updateTrackers(
+		"update",
+		"",
+		"",
+	)
+
+}
+
+func (a *AnalyzerManager) actionListener() {
+	for {
+		select {
+		case <-a.SigCh:
+			return
+		case <-a.AnalyzeCh:
+			a.Start()
+		}
+	}
 }
 
 func (a *AnalyzerManager) EndAutomation() {
+	a.updateTrackers(
+		"update",
+		"",
+		"",
+	)
 	a.Running = false
 }
 
@@ -47,7 +88,7 @@ func (a *AnalyzerManager) Start() {
 
 func (a *AnalyzerManager) getAvailableFiles() []string {
 	r := []string{}
-	entries, err := os.ReadDir(a.dirPath)
+	entries, err := os.ReadDir(a.targetPath)
 	if err != nil {
 		fmt.Println("Error reading directory:", err)
 	}
@@ -63,13 +104,26 @@ func (a *AnalyzerManager) getAvailableFiles() []string {
 
 func (a *AnalyzerManager) PrintAutomation() {
 	if a.Running {
-		fmt.Println(" -> Analyze Running...")
+		fmt.Println(" =====> ANALYZE RUNNING...")
 	} else {
-		fmt.Println(" -> Waiting to Analyze...")
+		fmt.Println(" =====> not analyzing")
 	}
-	fmt.Println(" -> ")
-	fmt.Println(" -> ")
-	fmt.Println(" -> ")
+	fmt.Println(a.track1)
+	fmt.Println(a.track2)
+	fmt.Println(a.track3)
+}
+
+func (a *AnalyzerManager) updateTrackers(t1 string, t2 string, t3 string) {
+	if t1 != "" {
+		a.track1 = " - Total Available: " + strconv.FormatInt(int64(len(a.getAvailableFiles())), 10)
+	}
+	if t2 != "" {
+		a.track2 = t2
+	}
+	if t3 != "" {
+		a.track3 = t3
+	}
+	a.drawCh <- ""
 }
 
 func (a *AnalyzerManager) PrintCli() {
