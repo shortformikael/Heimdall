@@ -94,11 +94,9 @@ func (a *AnalyzerManager) StartAuto() {
 		worker := NewWorker(a.wg, dstPath, a.donePath)
 		go worker.Start()
 	}
-	a.updateTrackers("update", "Running: "+strconv.FormatInt(int64(count), 10), "")
+	a.updateTrackers("update", " - Running: "+strconv.FormatInt(int64(count), 10), "")
 
 	a.wg.Wait()
-	a.updateTrackers("update", "", " - Done with some workers")
-
 	time.Sleep(1 * time.Second)
 	if a.Running {
 		a.AnalyzeCh <- ""
