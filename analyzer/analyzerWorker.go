@@ -15,19 +15,21 @@ type analyzerWorker struct {
 	conversationMap map[string]*Conversation
 	wg              *sync.WaitGroup
 	filename        string
+	donePath        string
 }
 
-func NewWorker(pWG *sync.WaitGroup, pFilename string) *analyzerWorker {
+func NewWorker(pWG *sync.WaitGroup, pFilename string, pDone string) *analyzerWorker {
 	return &analyzerWorker{
 		conversationMap: make(map[string]*Conversation),
 		wg:              pWG,
 		filename:        pFilename,
+		donePath:        pDone,
 	}
 }
 
 func (a *analyzerWorker) Start() {
 	defer a.wg.Done()
-	fmt.Println("Worker for file", a.filename, "started...")
+	//fmt.Println("Worker for file", a.filename, "started...")
 	handle, err := a.getFileHandle()
 	if err != nil {
 		fmt.Println(err)
@@ -42,11 +44,21 @@ func (a *analyzerWorker) Start() {
 		fmt.Println("error writing to file:", err)
 		return
 	}
-	fmt.Println("Worker for file", a.filename, "Ended!")
+	handle.Close()
+	split := strings.Split(a.filename, "/")
+	dstPath := a.donePath + "/" + split[len(split)-1]
+	err = os.Rename(a.filename, dstPath)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	//fmt.Println("Worker for file", a.filename, "Ended!")
 }
 
 func (a *analyzerWorker) saveToJSON() error {
-	file, err := os.Create(strings.Split("entries/"+a.filename, ".")[0] + ".json")
+	split := strings.Split(a.filename, "/")
+	dstPath := "./entries/" + strings.Split(split[len(split)-1], ".")[0] + ".json"
+	//fmt.Println(dstPath)
+	file, err := os.Create(dstPath)
 	if err != nil {
 		return err
 	}
@@ -89,7 +101,7 @@ func (a *analyzerWorker) AnalyzePacketSource(handle *pcap.Handle) {
 }
 
 func (a *analyzerWorker) getFileHandle() (*pcap.Handle, error) {
-	handle, err := pcap.OpenOffline("pcaps/" + a.filename)
+	handle, err := pcap.OpenOffline(a.filename)
 	if err != nil {
 		return nil, fmt.Errorf("error: %v", err)
 	}

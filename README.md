@@ -22,3 +22,12 @@
 * Protocol classification (TCP, UDP, ICMP)
 * Application-layer Protocol Detection through known ports with SNI.
 * Does not do Deep Packet Inspection, only headers.
+
+
+## Directories Needed
+
+* entries
+* entries/done
+* entries/ongoing
+* pcaps
+* pcaps/done

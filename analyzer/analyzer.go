@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
 )
 
 type AnalyzerManager struct {
@@ -13,7 +15,6 @@ type AnalyzerManager struct {
 	ongoingPath     string
 	donePath        string
 	conversationMap map[string]*Conversation
-	availableFiles  []string
 	wg              *sync.WaitGroup
 
 	drawCh    chan string
@@ -32,24 +33,26 @@ func (a *AnalyzerManager) Init(drawCh chan string) {
 	a.AnalyzeCh = make(chan string)
 	a.SigCh = make(chan string)
 
-	a.availableFiles = a.getAvailableFiles()
 	a.wg = &sync.WaitGroup{}
 	a.targetPath = "./pcaps/done"
 	a.ongoingPath = "./entries/ongoing"
-	a.donePath = "./entries"
+	a.donePath = "./entries/done"
 	a.track1 = ""
-	a.track2 = " - Running: "
+	a.track2 = ""
 	a.track3 = ""
+
+	//a.updateTrackers("update", " - Running: 0", "")
 }
 
 func (a *AnalyzerManager) StartAutomation() {
 	a.Running = true
 	a.updateTrackers(
 		"update",
-		"",
+		" - Running:",
 		"",
 	)
-
+	go a.actionListener()
+	go a.StartAuto()
 }
 
 func (a *AnalyzerManager) actionListener() {
@@ -58,7 +61,7 @@ func (a *AnalyzerManager) actionListener() {
 		case <-a.SigCh:
 			return
 		case <-a.AnalyzeCh:
-			a.Start()
+			go a.StartAuto()
 		}
 	}
 }
@@ -72,13 +75,51 @@ func (a *AnalyzerManager) EndAutomation() {
 	a.Running = false
 }
 
+func (a *AnalyzerManager) StartAuto() {
+	availbleFiles := a.getAvailableFiles()
+	count := 0
+
+	for _, file := range availbleFiles {
+
+		//Move the file to ongoing
+		split := strings.Split(file, "/")
+		dstPath := a.ongoingPath + "/" + split[len(split)-1]
+		err := os.Rename(file, dstPath)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		count++
+		a.wg.Add(1)
+		worker := NewWorker(a.wg, dstPath, a.donePath)
+		go worker.Start()
+	}
+	a.updateTrackers("update", "Running: "+strconv.FormatInt(int64(count), 10), "")
+
+	a.wg.Wait()
+	a.updateTrackers("update", "", " - Done with some workers")
+
+	time.Sleep(1 * time.Second)
+	if a.Running {
+		a.AnalyzeCh <- ""
+	}
+}
+
 func (a *AnalyzerManager) Start() {
-	a.availableFiles = a.getAvailableFiles()
-	//Iterate through available files
-	for _, file := range a.availableFiles {
+	availableFiles := a.getAvailableFiles()
+	//Iterate through available files an create worker for each
+	for _, file := range availableFiles {
+
+		split := strings.Split(file, "/")
+		dstPath := a.ongoingPath + "/" + split[len(split)-1]
+		err := os.Rename(file, dstPath)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
 		//Create worker for each file
 		a.wg.Add(1)
-		worker := NewWorker(a.wg, file)
+		worker := NewWorker(a.wg, dstPath, a.donePath)
 		go worker.Start()
 		//Have each worker serialize a jsonfile
 	}
@@ -95,7 +136,7 @@ func (a *AnalyzerManager) getAvailableFiles() []string {
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			r = append(r, entry.Name())
+			r = append(r, a.targetPath+"/"+entry.Name())
 		}
 	}
 

@@ -66,7 +66,7 @@ func NewPacketCapture(device string) (*PacketCapture, error) {
 		handle:     handle,
 		stopCh:     make(chan struct{}),
 		packetChan: make(chan gopacket.Packet, 1000),
-		maxBytes:   10 * (1000 * 1024), // 10MB
+		maxBytes:   1 * (100 * 1024), // 1MB
 		totalBytes: 0,
 	}, nil
 }
