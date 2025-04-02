@@ -1,2 +1,3 @@
 # Ignore All pcaps
-*.pcaps
+*.pcap
+capture*.json

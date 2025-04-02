@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -22,6 +23,14 @@ func (c *CaptureManager) Init() {
 	c.Running = false
 }
 
+func (c *CaptureManager) StartAutomation() {
+	c.Running = true
+}
+
+func (c *CaptureManager) EndAutomation() {
+	c.Running = false
+}
+
 func (c *CaptureManager) StartCapture() error {
 	var err error
 	c.capture, err = NewPacketCapture(c.capDevice.Name)
@@ -32,8 +41,16 @@ func (c *CaptureManager) StartCapture() error {
 	c.Running = true
 	c.capture.Start()
 
-	go c.WritePacketToFile("capture.pcap", c.capture.packetChan)
+	filename := c.getFilename()
+
+	go c.WritePacketToFile(filename, c.capture.packetChan)
 	return nil
+}
+
+func (c *CaptureManager) getFilename() string {
+	format := "2006-01-02_15-04-05"
+	timeNow := time.Now().Format(format)
+	return fmt.Sprintf("pcaps/capture_%s.pcap", timeNow)
 }
 
 func (c *CaptureManager) WritePacketToFile(filename string, packetChan <-chan gopacket.Packet) error {
@@ -44,7 +61,7 @@ func (c *CaptureManager) WritePacketToFile(filename string, packetChan <-chan go
 	defer f.Close()
 
 	w := pcapgo.NewWriter(f)
-	err = w.WriteFileHeader(1600, layers.LinkTypeEthernet)
+	err = w.WriteFileHeader(128, layers.LinkTypeEthernet)
 	if err != nil {
 		return err
 	}
@@ -63,13 +80,27 @@ func (c *CaptureManager) EndCapture() {
 }
 
 func (c *CaptureManager) PrintCli() {
-	fmt.Println(" -> You're Within the Capture Menu")
+	// fmt.Println(" -> You're Within the Capture Menu")
 	if c.Running {
 		fmt.Println("Capture Running...")
+		fmt.Println(c.getFilename())
 	} else {
 		fmt.Println("")
 	}
 	c.PrintTargetDevice()
+}
+
+func (c *CaptureManager) PrintAutomation() {
+	if c.Running {
+		fmt.Println(" -> Capture Running...")
+	} else {
+		fmt.Println(" -> Waiting to Capture...")
+	}
+	// What captures are running?
+	fmt.Println(" -> ")
+	fmt.Println(" -> ")
+	// What device is capturing?
+	fmt.Println(" -> ")
 }
 
 func (c *CaptureManager) PrintTargetDevice() {
@@ -96,6 +127,8 @@ func (c *CaptureManager) setDeviceName() {
 
 	for _, device := range devices {
 		if strings.Contains(device.Description, "Wireless") ||
+			strings.Contains(device.Name, "eth") ||
+			strings.Contains(device.Name, "wl") ||
 			strings.Contains(device.Description, "Wi-Fi") {
 			c.capDevice = &device
 			return

@@ -43,9 +43,16 @@ func (pc *PacketCapture) Packets() <-chan gopacket.Packet {
 }
 
 func NewPacketCapture(device string) (*PacketCapture, error) {
-	handle, err := pcap.OpenLive(device, 1600, true, pcap.BlockForever)
+	// 96 or 128 for snaplen
+	handle, err := pcap.OpenLive(device, 96, true, pcap.BlockForever)
 	if err != nil {
 		return nil, fmt.Errorf("error opening device: %v", err)
+	}
+
+	//Set Filter
+	err = handle.SetBPFFilter("tcp or udp or icmp")
+	if err != nil {
+		return nil, fmt.Errorf("error applying filter: %v", err)
 	}
 
 	return &PacketCapture{
