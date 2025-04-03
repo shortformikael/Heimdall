@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
-	"github.com/shortformikael/Heimdall/Sender"
 	"github.com/shortformikael/Heimdall/analyzer"
 	"github.com/shortformikael/Heimdall/capturer"
 	"github.com/shortformikael/Heimdall/container"
+	"github.com/shortformikael/Heimdall/sender"
 )
 
 type Engine struct {
@@ -30,7 +30,7 @@ type Engine struct {
 
 	capturer *capturer.CaptureManager
 	analyzer *analyzer.AnalyzerManager
-	sender   *Sender.Sender
+	sender   *sender.Sender
 }
 
 func (e *Engine) Start() {
@@ -58,7 +58,7 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 	e.Menu = container.NewMenu(tree)
 	e.capturer = &capturer.CaptureManager{}
 	e.analyzer = &analyzer.AnalyzerManager{}
-	e.sender = Sender.NewSender()
+	e.sender = sender.NewSender()
 	e.capturer.Init(e.drawCh)
 	e.analyzer.Init(e.drawCh)
 

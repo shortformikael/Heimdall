@@ -1,4 +1,4 @@
-package Sender
+package sender
 
 import (
 	"fmt"
@@ -52,11 +52,15 @@ func (r *Sender) StartReading() {
 	// Remove processed pcaps
 	for _, file := range pcapFiles {
 		os.Remove(file)
+		//r.count++
 	}
+
+	r.count = len(jsonFiles)
 	// Send and Remove json files
+
 	for _, file := range jsonFiles {
-		r.count++
 		os.Remove(file)
+		r.count++
 	}
 
 	time.Sleep(1 * time.Second)
@@ -84,13 +88,14 @@ func (r *Sender) getAvailableFiles(path string) []string {
 func (r *Sender) EndAutomation() {
 	r.Running = false
 	close(r.sigCh)
+
 }
 
 func (r *Sender) PrintAutomation() {
 	if r.Running {
-		fmt.Println(" =====> READING...")
+		fmt.Println(" =====> SENDING...")
 	} else {
-		fmt.Println(" =====> not reading")
+		fmt.Println(" =====> not sending")
 	}
 
 	fmt.Println(" - Total files sent:", strconv.FormatInt(int64(r.count), 10))
