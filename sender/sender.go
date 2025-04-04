@@ -55,7 +55,6 @@ func (r *Sender) StartReading() {
 		//r.count++
 	}
 
-	r.count = len(jsonFiles)
 	// Send and Remove json files
 
 	for _, file := range jsonFiles {
