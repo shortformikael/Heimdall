@@ -43,7 +43,7 @@ func (e *Engine) Start() {
 	go e.actionListener(3, &e.wg)
 
 	e.wg.Wait()
-	fmt.Println("All workers completed")
+	fmt.Println("All Listeners completed")
 }
 
 func (e *Engine) Init(tree *container.TreeGraph) {
@@ -51,8 +51,8 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 
 	e.commandCh = make(chan string) //Command Channel,
 	e.drawCh = make(chan string)
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	e.sigCh = make(chan os.Signal, 1)
+	signal.Notify(e.sigCh, os.Interrupt, syscall.SIGTERM)
 	e.keyCh = make(chan keyboard.Key)
 
 	e.Menu = container.NewMenu(tree)
@@ -72,11 +72,14 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 
 func (e *Engine) Shutdown() {
 	fmt.Println("Shutting down engine...")
-	os.Exit(1)
+	close(e.sigCh)
+	e.Running = false
+	keyboard.Close()
 }
 
 func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer fmt.Printf("Process %d Ended\n", id)
 	fmt.Printf("Process %d Started\n", id)
 	for e.Running {
 		char, key, err := keyboard.GetKey()
@@ -86,7 +89,6 @@ func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 			fmt.Println("Attempting to re-open keyboard...")
 			if err := keyboard.Open(); err != nil {
 				fmt.Printf("Failed to re-open keyboard: %v. Exiting... \n", err)
-				keyboard.Close()
 				e.Shutdown()
 				return
 			}
@@ -98,18 +100,17 @@ func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 			e.keyCh <- keyboard.Key(char)
 		}
 	}
-	fmt.Printf("Process %d Ended\n", id)
 }
 
 func (e *Engine) actionListener(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer fmt.Printf("Process %d Ended\n", id)
 	fmt.Printf("Process %d Started\n", id)
-	for e.Running {
+	for {
 		select {
 		case <-e.sigCh:
-			fmt.Println("\nRecieved interrupt signal. Exiting...")
-			e.Shutdown()
-			break
+			fmt.Println("actionListerner Shutdown")
+			return
 		case key, ok := <-e.keyCh:
 			if !ok {
 				fmt.Println("\nKeyboard channel closed. Exiting...")
@@ -142,11 +143,11 @@ func (e *Engine) actionListener(id int, wg *sync.WaitGroup) {
 			}
 		}
 	}
-	fmt.Printf("Process %d Ended\n", id)
 }
 
 func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer fmt.Printf("Process %d Ended\n", id)
 	fmt.Printf("Process %d Started\n", id)
 
 	time.Sleep(1 * time.Second)
@@ -155,94 +156,105 @@ func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 	fmt.Println("")
 	e.Menu.PrintCli()
 
-	for e.Running {
-		comm := <-e.drawCh
-		clearConsole()
+	for {
+		select {
+		case <-e.sigCh:
+			fmt.Println("DisplayListener Shutdown")
+			return
+		case comm := <-e.drawCh:
+			clearConsole()
+			if comm != "" {
+				fmt.Println("Event:", comm)
+			} else {
+				fmt.Println("")
+			}
 
-		if comm != "" {
-			fmt.Println("Event:", comm)
-		} else {
-			fmt.Println("")
-		}
-
-		switch e.Menu.Current.String() {
-		case "Main Menu":
-			e.Menu.PrintCli()
-		case "Automation":
-			fmt.Println("=== Automation ===")
-			e.capturer.PrintAutomation()
-			e.analyzer.PrintAutomation()
-			e.sender.PrintAutomation()
-		case "Capture":
-			e.Menu.PrintCliTitle()
-			e.capturer.PrintCli()
-		case "Analysis":
-			e.analyzer.PrintCli()
-		default:
-			e.Menu.PrintCliTitle()
+			switch e.Menu.Current.String() {
+			case "Main Menu":
+				e.Menu.PrintCli()
+			case "Automation":
+				fmt.Println("=== Automation ===")
+				e.capturer.PrintAutomation()
+				e.analyzer.PrintAutomation()
+				e.sender.PrintAutomation()
+			case "Capture":
+				e.Menu.PrintCliTitle()
+				e.capturer.PrintCli()
+			case "Analysis":
+				e.analyzer.PrintCli()
+			default:
+				e.Menu.PrintCliTitle()
+			}
 		}
 	}
-	fmt.Printf("Process %d Ended\n", id)
 }
 
 func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer fmt.Printf("Process %d Ended \n", id)
 	fmt.Printf("Process %d Started\n", id)
 
-	for e.Running {
-		comm := <-e.commandCh
-		switch comm {
-		case "NEXT":
-			e.Menu.Next()
-		case "PREVIOUS":
-			e.Menu.Previous()
-		case "SELECT":
-			switch e.Menu.Current.String() {
-			case "Main Menu":
-				sel := e.Menu.Select()
-				if sel == "Exit" {
-					e.Shutdown()
-				} else {
-					e.drawCh <- "Selected " + sel
-					continue
-				}
-			case "Automation":
-				if !e.analyzer.Running {
-					e.analyzer.StartAutomation()
-				} else {
-					e.analyzer.EndAutomation()
-				}
-				if !e.capturer.Running {
-					e.capturer.StartAutomation()
-				} else {
-					e.capturer.EndAutomation()
-				}
-				if !e.sender.Running {
-					e.sender.StartAutomation()
-				} else {
-					e.sender.EndAutomation()
-				}
-			case "Capture":
-				if e.capturer.Running {
-					e.capturer.EndCapture()
-					e.drawCh <- "End Capture"
-				} else {
-					err := e.capturer.StartCapture()
-					if err != nil {
-						e.drawCh <- err.Error()
+	for {
+
+		select {
+		case <-e.sigCh:
+			fmt.Println("commandListener Shutdown")
+			return
+		case comm := <-e.commandCh:
+			switch comm {
+			case "NEXT":
+				e.Menu.Next()
+			case "PREVIOUS":
+				e.Menu.Previous()
+			case "SELECT":
+				switch e.Menu.Current.String() {
+				case "Main Menu":
+					sel := e.Menu.Select()
+					if sel == "Exit" {
+						go e.Shutdown()
+						continue
+					} else {
+						e.drawCh <- "Selected " + sel
 						continue
 					}
-					e.drawCh <- "Start Capture"
+				case "Automation":
+					if !e.analyzer.Running {
+						e.analyzer.StartAutomation()
+					} else {
+						e.analyzer.EndAutomation()
+					}
+					if !e.capturer.Running {
+						e.capturer.StartAutomation()
+					} else {
+						e.capturer.EndAutomation()
+					}
+					if !e.sender.Running {
+						e.sender.StartAutomation()
+					} else {
+						e.sender.EndAutomation()
+					}
+				case "Capture":
+					if e.capturer.Running {
+						e.capturer.EndCapture()
+						e.drawCh <- "End Capture"
+					} else {
+						err := e.capturer.StartCapture()
+						if err != nil {
+							e.drawCh <- err.Error()
+							continue
+						}
+						e.drawCh <- "Start Capture"
+					}
+					continue
+				case "Analysis":
+					e.analyzer.Start()
+					continue
 				}
-				continue
-			case "Analysis":
-				e.analyzer.Start()
-				continue
+			case "BACK":
+				e.Menu.Back()
 			}
-		case "BACK":
-			e.Menu.Back()
+			e.drawCh <- ""
 		}
-		e.drawCh <- ""
 	}
 }
 
