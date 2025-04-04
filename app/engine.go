@@ -66,7 +66,7 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 		fmt.Println("Error opening keyboard:", err)
 		return
 	}
-	//defer keyboard.Close()
+	defer keyboard.Close()
 
 }
 
@@ -81,6 +81,7 @@ func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer fmt.Printf("Process %d Ended\n", id)
 	fmt.Printf("Process %d Started\n", id)
+	keyboard.Open()
 	for e.Running {
 		char, key, err := keyboard.GetKey()
 		if err != nil {
