@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
+	settings "github.com/shortformikael/Heimdall/Settings"
 	"github.com/shortformikael/Heimdall/analyzer"
 	"github.com/shortformikael/Heimdall/capturer"
 	"github.com/shortformikael/Heimdall/container"
@@ -80,18 +81,22 @@ func (e *Engine) Shutdown() {
 
 func (e *Engine) keyboardListener(id int, name string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Printf("Process %d, %v Ended\n", id, name)
 	defer keyboard.Close()
-	fmt.Printf("Process %d, %v Started\n", id, name)
+	if settings.Config.Debug {
+		defer fmt.Printf("Process %d, %v Ended\n", id, name)
+		fmt.Printf("Process %d, %v Started\n", id, name)
+	}
 	for e.Running {
 		char, key, err := keyboard.GetKey()
 		if err != nil {
 			fmt.Println("Error getting key:", err)
 			keyboard.Close()
-			fmt.Println("Attempting to re-open keyboard...")
-			if err := keyboard.Open(); err != nil {
-				fmt.Printf("Failed to re-open keyboard: %v. Exiting... \n", err)
-				return
+			if e.Running {
+				fmt.Println("Attempting to re-open keyboard...")
+				if err := keyboard.Open(); err != nil {
+					fmt.Printf("Failed to re-open keyboard: %v. Exiting... \n", err)
+					return
+				}
 			}
 			continue
 		}
@@ -105,12 +110,16 @@ func (e *Engine) keyboardListener(id int, name string, wg *sync.WaitGroup) {
 
 func (e *Engine) actionListener(id int, name string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Printf("Process %d, %v Ended\n", id, name)
-	fmt.Printf("Process %d, %v Started\n", id, name)
+	if settings.Config.Debug {
+		defer fmt.Printf("Process %d, %v Ended\n", id, name)
+		fmt.Printf("Process %d, %v Started\n", id, name)
+	}
 	for {
 		select {
 		case <-e.sigCh:
-			fmt.Println("actionListerner Shutdown")
+			if settings.Config.Debug {
+				fmt.Println("actionListerner Shutdown")
+			}
 			return
 		case key, ok := <-e.keyCh:
 			if !ok {
@@ -148,9 +157,10 @@ func (e *Engine) actionListener(id int, name string, wg *sync.WaitGroup) {
 
 func (e *Engine) displayListener(id int, name string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Printf("Process %d, %v Ended\n", id, name)
-	fmt.Printf("Process %d, %v Started\n", id, name)
-
+	if settings.Config.Debug {
+		defer fmt.Printf("Process %d, %v Ended\n", id, name)
+		fmt.Printf("Process %d, %v Started\n", id, name)
+	}
 	time.Sleep(1 * time.Second)
 
 	clearConsole()
@@ -160,7 +170,9 @@ func (e *Engine) displayListener(id int, name string, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-e.sigCh:
-			fmt.Println("DisplayListener Shutdown")
+			if settings.Config.Debug {
+				fmt.Println("DisplayListener Shutdown")
+			}
 			return
 		case comm := <-e.drawCh:
 			clearConsole()
@@ -183,6 +195,9 @@ func (e *Engine) displayListener(id int, name string, wg *sync.WaitGroup) {
 				e.capturer.PrintCli()
 			case "Analysis":
 				e.analyzer.PrintCli()
+			case "Settings":
+				e.Menu.PrintCliTitle()
+				settings.Config.PrintCLi()
 			default:
 				e.Menu.PrintCliTitle()
 			}
@@ -192,14 +207,18 @@ func (e *Engine) displayListener(id int, name string, wg *sync.WaitGroup) {
 
 func (e *Engine) commandListener(id int, name string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Printf("Process %d, %v Ended \n", id, name)
-	fmt.Printf("Process %d, %v Started\n", id, name)
 
+	if settings.Config.Debug {
+		defer fmt.Printf("Process %d, %v Ended \n", id, name)
+		fmt.Printf("Process %d, %v Started\n", id, name)
+	}
 	for {
 
 		select {
 		case <-e.sigCh:
-			fmt.Println("commandListener Shutdown")
+			if settings.Config.Debug {
+				fmt.Println("commandListener Shutdown")
+			}
 			return
 		case comm := <-e.commandCh:
 			switch comm {

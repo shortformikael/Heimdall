@@ -17,6 +17,11 @@ func main() {
 
 func varInit() {
 	fmt.Println("Started Program Initialization...")
+	menuInit()
+
+}
+
+func menuInit() {
 	menuTree := &container.TreeGraph{Head: &container.TreeNode{}}
 	App.List = &container.LinkedList{}
 

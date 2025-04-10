@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
+	settings "github.com/shortformikael/Heimdall/Settings"
 )
 
 type PacketCapture struct {
@@ -66,7 +67,7 @@ func NewPacketCapture(device string) (*PacketCapture, error) {
 		handle:     handle,
 		stopCh:     make(chan struct{}),
 		packetChan: make(chan gopacket.Packet, 1000),
-		maxBytes:   1 * (100 * 1024), // 1MB
+		maxBytes:   settings.Config.PcapSize,
 		totalBytes: 0,
 	}, nil
 }
