@@ -37,10 +37,10 @@ func (e *Engine) Start() {
 	fmt.Println("Starting Engine...")
 	e.Running = true
 	e.wg.Add(4)
-	go e.keyboardListener(0, &e.wg)
-	go e.commandListener(1, &e.wg)
-	go e.displayListener(2, &e.wg)
-	go e.actionListener(3, &e.wg)
+	go e.keyboardListener(0, "Keyboard", &e.wg)
+	go e.commandListener(1, "Command", &e.wg)
+	go e.displayListener(2, "Display", &e.wg)
+	go e.actionListener(3, "Action", &e.wg)
 
 	e.wg.Wait()
 	fmt.Println("All Listeners completed")
@@ -66,22 +66,23 @@ func (e *Engine) Init(tree *container.TreeGraph) {
 		fmt.Println("Error opening keyboard:", err)
 		return
 	}
-	defer keyboard.Close()
-
 }
 
 func (e *Engine) Shutdown() {
 	fmt.Println("Shutting down engine...")
 	close(e.sigCh)
 	e.Running = false
-	keyboard.Close()
+
+	if err := keyboard.Close(); err != nil {
+		fmt.Println("Error Closing Keyboard:", err)
+	}
 }
 
-func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
+func (e *Engine) keyboardListener(id int, name string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Printf("Process %d Ended\n", id)
-	fmt.Printf("Process %d Started\n", id)
-	keyboard.Open()
+	defer fmt.Printf("Process %d, %v Ended\n", id, name)
+	defer keyboard.Close()
+	fmt.Printf("Process %d, %v Started\n", id, name)
 	for e.Running {
 		char, key, err := keyboard.GetKey()
 		if err != nil {
@@ -90,7 +91,6 @@ func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 			fmt.Println("Attempting to re-open keyboard...")
 			if err := keyboard.Open(); err != nil {
 				fmt.Printf("Failed to re-open keyboard: %v. Exiting... \n", err)
-				e.Shutdown()
 				return
 			}
 			continue
@@ -103,10 +103,10 @@ func (e *Engine) keyboardListener(id int, wg *sync.WaitGroup) {
 	}
 }
 
-func (e *Engine) actionListener(id int, wg *sync.WaitGroup) {
+func (e *Engine) actionListener(id int, name string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Printf("Process %d Ended\n", id)
-	fmt.Printf("Process %d Started\n", id)
+	defer fmt.Printf("Process %d, %v Ended\n", id, name)
+	fmt.Printf("Process %d, %v Started\n", id, name)
 	for {
 		select {
 		case <-e.sigCh:
@@ -146,10 +146,10 @@ func (e *Engine) actionListener(id int, wg *sync.WaitGroup) {
 	}
 }
 
-func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
+func (e *Engine) displayListener(id int, name string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Printf("Process %d Ended\n", id)
-	fmt.Printf("Process %d Started\n", id)
+	defer fmt.Printf("Process %d, %v Ended\n", id, name)
+	fmt.Printf("Process %d, %v Started\n", id, name)
 
 	time.Sleep(1 * time.Second)
 
@@ -190,10 +190,10 @@ func (e *Engine) displayListener(id int, wg *sync.WaitGroup) {
 	}
 }
 
-func (e *Engine) commandListener(id int, wg *sync.WaitGroup) {
+func (e *Engine) commandListener(id int, name string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Printf("Process %d Ended \n", id)
-	fmt.Printf("Process %d Started\n", id)
+	defer fmt.Printf("Process %d, %v Ended \n", id, name)
+	fmt.Printf("Process %d, %v Started\n", id, name)
 
 	for {
 
