@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	settings "github.com/shortformikael/Heimdall/Settings"
 	"github.com/shortformikael/Heimdall/app"
 	"github.com/shortformikael/Heimdall/container"
 )
@@ -15,7 +16,33 @@ func main() {
 	varInit()
 	start()
 
+	if settings.Config.Debug {
+		cleanTmp()
+	}
+
 	os.Exit(0)
+}
+
+func cleanTmp() {
+	directories := [5]string{
+		"./entries",
+		"./entries/done",
+		"./entries/ongoing",
+		"./pcaps",
+		"./pcaps/done",
+	}
+
+	for _, dir := range directories {
+		files, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, file := range files {
+			if !file.IsDir() {
+				os.Remove(dir + "/" + file.Name())
+			}
+		}
+	}
 }
 
 func varInit() {

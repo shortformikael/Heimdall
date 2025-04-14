@@ -12,7 +12,7 @@ type AppConfig struct {
 var Config = AppConfig{
 	Name:       "Heimdall",
 	AppVersion: "v0.2",
-	Debug:      false,
+	Debug:      true,
 	PcapSize:   1 * (1000 * 1024), //MB
 }
 
