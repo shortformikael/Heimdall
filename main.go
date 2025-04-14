@@ -42,6 +42,7 @@ func dirInit() {
 func dirCheck(dir string) {
 	_, err := os.ReadDir(dir)
 	if err != nil {
+		fmt.Println("Creating Missing Directory:", dir)
 		os.Mkdir(dir, 0777)
 	}
 }
