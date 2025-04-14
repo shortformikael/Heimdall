@@ -10,6 +10,13 @@ import (
 )
 
 var App *app.Engine = &app.Engine{}
+var directories = [5]string{
+	"./entries",
+	"./entries/done",
+	"./entries/ongoing",
+	"./pcaps",
+	"./pcaps/done",
+}
 
 func main() {
 	fmt.Println("Soft Reset Complete")
@@ -24,14 +31,6 @@ func main() {
 }
 
 func cleanTmp() {
-	directories := [5]string{
-		"./entries",
-		"./entries/done",
-		"./entries/ongoing",
-		"./pcaps",
-		"./pcaps/done",
-	}
-
 	for _, dir := range directories {
 		files, err := os.ReadDir(dir)
 		if err != nil {
@@ -53,14 +52,6 @@ func varInit() {
 }
 
 func dirInit() {
-	directories := [5]string{
-		"./entries",
-		"./entries/done",
-		"./entries/ongoing",
-		"./pcaps",
-		"./pcaps/done",
-	}
-
 	for _, dir := range directories {
 		dirCheck(dir)
 	}
