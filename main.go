@@ -20,8 +20,30 @@ func main() {
 
 func varInit() {
 	fmt.Println("Started Program Initialization...")
+	dirInit()
 	menuInit()
 
+}
+
+func dirInit() {
+	directories := [5]string{
+		"./entries",
+		"./entries/done",
+		"./entries/ongoing",
+		"./pcaps",
+		"./pcaps/done",
+	}
+
+	for _, dir := range directories {
+		dirCheck(dir)
+	}
+}
+
+func dirCheck(dir string) {
+	_, err := os.ReadDir(dir)
+	if err != nil {
+		os.Mkdir(dir, 0777)
+	}
 }
 
 func menuInit() {
