@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/shortformikael/Heimdall/app"
 	"github.com/shortformikael/Heimdall/container"
@@ -13,6 +14,8 @@ func main() {
 	fmt.Println("Soft Reset Complete")
 	varInit()
 	start()
+
+	os.Exit(0)
 }
 
 func varInit() {
